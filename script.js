@@ -16,11 +16,34 @@ function paintParallax() {
 }
 addEventListener('scroll', () => { if (!pending) { pending = true; requestAnimationFrame(paintParallax); } }, {passive: true});
 motionPreference.addEventListener('change', paintParallax);
+function animateCount(el) {
+  const target = parseInt(el.dataset.target, 10);
+  const numEl = el.querySelector('.stat-number');
+  if (!numEl || isNaN(target)) return;
+  const suffix = numEl.dataset.suffix || '';
+  const duration = 1400;
+  const start = performance.now();
+  function tick(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    numEl.textContent = Math.round(target * eased).toLocaleString('uk-UA') + suffix;
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
 if ('IntersectionObserver' in window) {
   const observer = new IntersectionObserver(entries => {
-    entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); } });
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        if (entry.target.classList.contains('stat-item')) animateCount(entry.target);
+        observer.unobserve(entry.target);
+      }
+    });
   }, {threshold:.08});
   document.querySelectorAll('.reveal').forEach(el => { el.classList.add('will-reveal'); observer.observe(el); });
+} else {
+  document.querySelectorAll('.stat-item').forEach(animateCount);
 }
 
 document.querySelectorAll('[data-photo]').forEach(element => {
